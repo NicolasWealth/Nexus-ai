@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef } from 'react';
-import Particles from 'react-tsparticles';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import Particles, { initParticlesEngine } from '@tsparticles/react';
 import { loadFull } from 'tsparticles';
-import type { Engine, Container } from 'tsparticles-engine';
+import type { Container } from '@tsparticles/engine';
 
 // ─── Inline CSS ───────────────────────────────────────────────────────────────
 const STYLES = `
@@ -276,18 +276,23 @@ const WEB_CONFIG = {
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 export const CyberpunkMatrixBackground = () => {
+  const [init, setInit] = useState(false);
   const rainRef = useRef<Container | null>(null);
   const webRef = useRef<Container | null>(null);
 
-  const initParticles = useCallback(async (engine: Engine) => {
-    await loadFull(engine);
+  useEffect(() => {
+    initParticlesEngine(async (engine) => {
+      await loadFull(engine);
+    }).then(() => {
+      setInit(true);
+    });
   }, []);
 
-  const onRainLoaded = useCallback((container?: Container) => {
+  const onRainLoaded = useCallback(async (container?: Container) => {
     if (container) rainRef.current = container;
   }, []);
 
-  const onWebLoaded = useCallback((container?: Container) => {
+  const onWebLoaded = useCallback(async (container?: Container) => {
     if (container) webRef.current = container;
   }, []);
 
@@ -311,26 +316,28 @@ export const CyberpunkMatrixBackground = () => {
         <div className="cbg-scanline" />
 
         {/* Layer 1: Slow digital rain (emerald green, vertical) */}
-        <div className="cbg-particles">
-          <Particles
-            id="rain-particles"
-            init={initParticles}
-            loaded={onRainLoaded}
-            options={RAIN_CONFIG}
-            style={{ position: 'absolute', inset: 0 }}
-          />
-        </div>
+        {init && (
+          <div className="cbg-particles">
+            <Particles
+              id="rain-particles"
+              particlesLoaded={onRainLoaded}
+              options={RAIN_CONFIG}
+              style={{ position: 'absolute', inset: 0 }}
+            />
+          </div>
+        )}
 
         {/* Layer 2: Chaotic web connections (purple + lemon) */}
-        <div className="cbg-particles">
-          <Particles
-            id="web-particles"
-            init={initParticles}
-            loaded={onWebLoaded}
-            options={WEB_CONFIG}
-            style={{ position: 'absolute', inset: 0 }}
-          />
-        </div>
+        {init && (
+          <div className="cbg-particles">
+            <Particles
+              id="web-particles"
+              particlesLoaded={onWebLoaded}
+              options={WEB_CONFIG}
+              style={{ position: 'absolute', inset: 0 }}
+            />
+          </div>
+        )}
 
         {/* Radial vignette overlay */}
         <div className="cbg-vignette" />

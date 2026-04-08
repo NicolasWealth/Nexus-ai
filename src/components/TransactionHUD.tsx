@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity, Zap, GitBranch, Cpu, Shield, TriangleAlert,
   ArrowUpRight, ArrowDownLeft, CircleDot, Hexagon, Waves,
@@ -19,6 +19,13 @@ interface Transaction {
   timestamp: number;
 }
 
+import type { BestPath } from '../hooks/useLiquidityAgent';
+
+interface TransactionHUDProps {
+  bestPath: BestPath | null;
+  transactions: any[];
+}
+
 interface FlowNode {
   id: number;
   value: number;
@@ -31,21 +38,6 @@ const rand = (min: number, max: number) => Math.random() * (max - min) + min;
 const randInt = (min: number, max: number) => Math.floor(rand(min, max));
 const hex = () => Math.random().toString(16).slice(2, 8).toUpperCase();
 const addr = () => `0x${hex()}...${hex().slice(0, 4)}`;
-const tokens = ['ETH', 'USDC', 'WBTC', 'ARB', 'OP', 'MATIC'];
-const types: Transaction['type'][] = ['swap', 'transfer', 'stake', 'bridge'];
-const statuses: Transaction['status'][] = ['confirmed', 'confirmed', 'confirmed', 'pending', 'failed'];
-
-const makeTransaction = (): Transaction => ({
-  id: crypto.randomUUID(),
-  hash: `0x${hex()}${hex()}`,
-  from: addr(),
-  to: addr(),
-  amount: rand(0.001, 99.99).toFixed(4),
-  token: tokens[randInt(0, tokens.length)],
-  status: statuses[randInt(0, statuses.length)],
-  type: types[randInt(0, types.length)],
-  timestamp: Date.now(),
-});
 
 const statusColor: Record<Transaction['status'], string> = {
   confirmed: 'text-emerald-400',
@@ -272,10 +264,10 @@ const useLiveValue = (base: number, variance: number, interval = 800) => {
 };
 
 // ─── Card: Liquidity Flow ─────────────────────────────────────────────────────
-const LiquidityFlowCard = () => {
+const LiquidityFlowCard = ({ bestPath }: { bestPath: BestPath | null }) => {
   const tvl   = useLiveValue(48_312_440, 120_000, 1200);
   const vol24 = useLiveValue(3_821_900, 50_000, 900);
-  const apy   = useLiveValue(12.47, 0.3, 1500);
+  const savings = bestPath?.savings || 12.47;
 
   const nodes: FlowNode[] = [
     { id: 0, value: useLiveValue(72, 8, 700), label: 'ETH/USDC', trend: 'up' },
@@ -303,7 +295,7 @@ const LiquidityFlowCard = () => {
           {[
             { label: 'TVL', value: `$${(tvl / 1e6).toFixed(2)}M` },
             { label: '24h VOL', value: `$${(vol24 / 1e6).toFixed(2)}M` },
-            { label: 'AVG APY', value: `${apy.toFixed(2)}%` },
+            { label: 'AI SAVINGS', value: `${savings}%` },
           ].map(({ label, value }) => (
             <div key={label} className="bg-emerald-400/5 rounded-md p-2 border border-emerald-400/10">
               <div className="hud-font-mono text-[9px] text-emerald-400/60 mb-0.5">{label}</div>
@@ -366,7 +358,7 @@ const glitchVariants = {
     clipPath: 'inset(0 0 0% 0)',
     transition: {
       duration: 0.22,
-      ease: [0.16, 1, 0.3, 1],
+      ease: [0.16, 1, 0.3, 1] as any,
     },
   },
   exit: {
@@ -377,17 +369,25 @@ const glitchVariants = {
   },
 };
 
-const TransactionFeedCard = () => {
-  const [txns, setTxns] = useState<Transaction[]>(() =>
-    Array.from({ length: 6 }, makeTransaction)
-  );
+const TransactionFeedCard = ({ transactions }: { transactions: any[] }) => {
+  const [displayTxns, setDisplayTxns] = useState<Transaction[]>([]);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setTxns((prev) => [makeTransaction(), ...prev.slice(0, 7)]);
-    }, 1800);
-    return () => clearInterval(id);
-  }, []);
+    // Convert hook transactions to component format or use them directly
+    if (transactions.length > 0) {
+      setDisplayTxns(transactions.map(t => ({
+        id: String(t.id),
+        hash: `0x${Math.random().toString(16).slice(2, 10)}...`,
+        from: addr(),
+        to: addr(),
+        amount: t.totalFee.toFixed(2),
+        token: 'ETH',
+        status: 'confirmed',
+        type: 'bridge',
+        timestamp: t.id
+      })));
+    }
+  }, [transactions]);
 
   return (
     <motion.div
@@ -405,7 +405,7 @@ const TransactionFeedCard = () => {
 
         <div className="space-y-1 min-h-[210px]">
           <AnimatePresence initial={false}>
-            {txns.map((tx) => (
+            {displayTxns.map((tx) => (
               <motion.div
                 key={tx.id}
                 variants={glitchVariants}
@@ -454,7 +454,7 @@ const TransactionFeedCard = () => {
           <span className="hud-font-mono text-[9px] text-purple-400/60">
             MEMPOOL FEED<span className="blink">_</span>
           </span>
-          <span className="hud-font-mono text-[9px] text-purple-300 ml-auto">{txns.length} RECENT</span>
+          <span className="hud-font-mono text-[9px] text-purple-300 ml-auto">{displayTxns.length} RECENT</span>
         </div>
       </div>
     </motion.div>
@@ -719,8 +719,8 @@ const SystemBar = () => {
   );
 };
 
-// ─── Root HUD ─────────────────────────────────────────────────────────────────
-export const TransactionHUD = () => {
+// ─── Component ─────────────────────────────────────────────────────────────────
+export const TransactionHUD = ({ bestPath, transactions }: TransactionHUDProps) => {
   return (
     <>
       <style>{HUD_STYLES}</style>
@@ -744,11 +744,11 @@ export const TransactionHUD = () => {
           {/* Main card grid */}
           <div className="flex-1 grid grid-cols-4 gap-2 min-h-0">
             <div className="col-span-1 flex flex-col gap-2">
-              <LiquidityFlowCard />
+              <LiquidityFlowCard bestPath={bestPath} />
             </div>
 
             <div className="col-span-2 flex flex-col gap-2">
-              <TransactionFeedCard />
+              <TransactionFeedCard transactions={transactions} />
             </div>
 
             <div className="col-span-1 flex flex-col gap-2">

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
@@ -8,8 +8,8 @@ import TransactionHUD from './components/TransactionHUD';
 import { useLiquidityAgent } from './hooks/useLiquidityAgent';
 
 function App() {
-  const [count, setCount] = useState(0)
   const { bestPath, transactions } = useLiquidityAgent();
+  const count = transactions.length;
 
   return (
     <div className="relative w-full min-h-screen bg-black overflow-hidden font-mono">
@@ -35,12 +35,11 @@ function App() {
               Autonomous Liquidity Optimization Engine
             </p>
           </div>
-          <button
-            className="counter px-6 py-3 bg-white/5 border border-white/10 rounded-full text-white hover:bg-white/10 transition-colors"
-            onClick={() => setCount((count) => count + 1)}
+          <div
+            className="counter px-6 py-3 bg-white/5 border border-white/10 rounded-full text-white transition-colors"
           >
             Network Pulses: {count}
-          </button>
+          </div>
         </section>
 
         <div className="ticks w-full"></div>

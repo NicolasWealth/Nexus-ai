@@ -16,14 +16,14 @@ interface Transaction {
   token: string;
   status: 'confirmed' | 'pending' | 'failed';
   type: 'swap' | 'transfer' | 'stake' | 'bridge';
-  timestamp: number;
+  timestamp: number | string;
 }
 
 import type { BestPath } from '../hooks/useLiquidityAgent';
 
 interface TransactionHUDProps {
   bestPath: BestPath | null;
-  transactions: any[];
+  transactions: BestPath[];
 }
 
 interface FlowNode {
@@ -36,8 +36,6 @@ interface FlowNode {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const rand = (min: number, max: number) => Math.random() * (max - min) + min;
 const randInt = (min: number, max: number) => Math.floor(rand(min, max));
-const hex = () => Math.random().toString(16).slice(2, 8).toUpperCase();
-const addr = () => `0x${hex()}...${hex().slice(0, 4)}`;
 
 const statusColor: Record<Transaction['status'], string> = {
   confirmed: 'text-emerald-400',
@@ -369,26 +367,7 @@ const glitchVariants = {
   },
 };
 
-const TransactionFeedCard = ({ transactions }: { transactions: any[] }) => {
-  const [displayTxns, setDisplayTxns] = useState<Transaction[]>([]);
-
-  useEffect(() => {
-    // Convert hook transactions to component format or use them directly
-    if (transactions.length > 0) {
-      setDisplayTxns(transactions.map(t => ({
-        id: String(t.id),
-        hash: `0x${Math.random().toString(16).slice(2, 10)}...`,
-        from: addr(),
-        to: addr(),
-        amount: t.totalFee.toFixed(2),
-        token: 'ETH',
-        status: 'confirmed',
-        type: 'bridge',
-        timestamp: t.id
-      })));
-    }
-  }, [transactions]);
-
+const TransactionFeedCard = ({ transactions }: { transactions: BestPath[] }) => {
   return (
     <motion.div
       className="glass-card animate-glow-purple relative overflow-hidden scanlines corner-tl corner-br"
@@ -405,7 +384,7 @@ const TransactionFeedCard = ({ transactions }: { transactions: any[] }) => {
 
         <div className="space-y-1 min-h-[210px]">
           <AnimatePresence initial={false}>
-            {displayTxns.map((tx) => (
+            {transactions.map((tx) => (
               <motion.div
                 key={tx.id}
                 variants={glitchVariants}
@@ -434,12 +413,11 @@ const TransactionFeedCard = ({ transactions }: { transactions: any[] }) => {
                   </div>
                 </div>
 
-                {/* Amount */}
                 <div className="text-right shrink-0">
                   <div className="hud-font-display text-[10px] text-purple-200">
-                    {tx.amount}
+                    {tx.totalFee.toFixed(2)}
                   </div>
-                  <div className="hud-font-mono text-[8px] text-purple-400/60">{tx.token}</div>
+                  <div className="hud-font-mono text-[8px] text-purple-400/60">ETH</div>
                 </div>
 
                 {/* Status dot */}
@@ -454,7 +432,7 @@ const TransactionFeedCard = ({ transactions }: { transactions: any[] }) => {
           <span className="hud-font-mono text-[9px] text-purple-400/60">
             MEMPOOL FEED<span className="blink">_</span>
           </span>
-          <span className="hud-font-mono text-[9px] text-purple-300 ml-auto">{displayTxns.length} RECENT</span>
+          <span className="hud-font-mono text-[9px] text-purple-300 ml-auto">{transactions.length} RECENT</span>
         </div>
       </div>
     </motion.div>
@@ -466,7 +444,7 @@ const NetworkPulseCard = () => {
   const tps      = useLiveValue(2847, 200, 600);
   const gasPrice = useLiveValue(18.4, 2.5, 700);
   const blockNum = useRef(19_482_301);
-  const [block, setBlock] = useState(blockNum.current);
+  const [block, setBlock] = useState(19_482_301);
 
   useEffect(() => {
     const id = setInterval(() => {

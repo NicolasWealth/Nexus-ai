@@ -5,6 +5,7 @@ import {
   ArrowUpRight, ArrowDownLeft, CircleDot, Hexagon, Waves,
   BarChart3, Lock, Radio
 } from 'lucide-react';
+import { PrivateText } from './PrivacyShield';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Transaction {
@@ -342,7 +343,7 @@ const LiquidityFlowCard = ({ bestPath }: { bestPath: BestPath | null }) => {
 };
 
 // ─── Card: Transaction Feed ───────────────────────────────────────────────────
-const glitchVariants = {
+const glitchVariants: import('framer-motion').Variants = {
   hidden: {
     opacity: 0,
     x: -6,
@@ -356,7 +357,7 @@ const glitchVariants = {
     clipPath: 'inset(0 0 0% 0)',
     transition: {
       duration: 0.22,
-      ease: [0.16, 1, 0.3, 1] as any,
+      ease: [0.16, 1, 0.3, 1],
     },
   },
   exit: {
@@ -402,20 +403,20 @@ const TransactionFeedCard = ({ transactions }: { transactions: BestPath[] }) => 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="hud-font-mono text-[9px] text-purple-300 truncate">
-                      {tx.hash.slice(0, 14)}…
+                      <PrivateText value={tx.hash} type="hash" />
                     </span>
                     <span className={`text-[8px] hud-font-mono px-1 rounded ${statusColor[tx.status]} bg-current/10`}>
                       {tx.status.toUpperCase()}
                     </span>
                   </div>
                   <div className="hud-font-mono text-[8px] text-purple-400/50 truncate">
-                    {tx.from} → {tx.to}
+                    <PrivateText value={tx.from} type="address" /> → <PrivateText value={tx.to} type="address" />
                   </div>
                 </div>
 
                 <div className="text-right shrink-0">
                   <div className="hud-font-display text-[10px] text-purple-200">
-                    {tx.totalFee.toFixed(2)}
+                    <PrivateText value={tx.totalFee.toFixed(2)} type="amount" />
                   </div>
                   <div className="hud-font-mono text-[8px] text-purple-400/60">ETH</div>
                 </div>
@@ -753,6 +754,12 @@ export const TransactionHUD = ({ bestPath, transactions }: TransactionHUDProps) 
                 <span className={`hud-font-mono text-[9px] ${color}`}>{val}</span>
               </div>
             ))}
+            <div className="mt-3 pt-2 border-t border-white/5">
+              <span className="mono-font text-[8px] text-white/20">TX: </span>
+              <span className="mono-font text-[8px] text-emerald-400/50">
+                {bestPath && <PrivateText value={bestPath.hash} type="hash" />}
+              </span>
+            </div>
             <div className="ml-auto hud-font-mono text-[8px] text-white/20">
               NEXUS HUD v2.4.1 · © 2025
             </div>

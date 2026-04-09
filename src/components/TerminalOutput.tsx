@@ -14,6 +14,7 @@ interface LogEntry {
   done: boolean
 }
 
+
 interface TerminalOutputProps {
   /** Characters typed per second. Default: 38 */
   typingSpeed?: number
@@ -275,14 +276,19 @@ export const TerminalOutput = ({
       typed:     '',
       done:      false,
     }
-    setLog((prev) => [...prev, entry])
+    // Use setTimeout to avoid synchronous setState in effect (cascading render)
+    setTimeout(() => {
+      setLog((prev) => [...prev, entry])
+    }, 0)
   }, [running, complete, currentLine, charIndex, lines])
 
   // Handle completion
   useEffect(() => {
     if (currentLine >= lines.length && running) {
-      setComplete(true)
-      setRunning(false)
+      setTimeout(() => {
+        setComplete(true)
+        setRunning(false)
+      }, 0)
     }
   }, [currentLine, lines.length, running])
 

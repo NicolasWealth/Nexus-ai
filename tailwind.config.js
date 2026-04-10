@@ -6,18 +6,12 @@ export default {
   ],
   theme: {
     extend: {
-      backdropBlur: {
-        xs: '2px',
+      fontWeight: {
+        '600': '600',
+        '700': '700',
+        '800': '800',
+        '900': '900',
       },
-      animation: {
-        'glow-pulse': 'glow-pulse 3s ease-in-out infinite',
-      },
-      keyframes: {
-        'glow-pulse': {
-          '0%, 100%': { boxShadow: '0 0 10px rgba(16, 185, 129, 0.4)' },
-          '50%': { boxShadow: '0 0 20px rgba(16, 185, 129, 0.8)' },
-        }
-      }
     },
   },
   plugins: [],

@@ -151,6 +151,7 @@ export const useLiquidityAgent = (): UseLiquidityAgentReturn => {
   }, [db])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     runAgent()
     const id = setInterval(runAgent, AGENT_INTERVAL_MS)
     return () => clearInterval(id)

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import './App.css'
 import CyberpunkMatrixBackground from './components/CyberpunkMatrixBackground'
 import TransactionHUD from './components/TransactionHUD'
-import { PrivacyShieldProvider, PrivacyShield, PrivateText } from './components/PrivacyShield'
+import { PrivacyShieldProvider, PrivacyShield } from './components/PrivacyShield'
 import { useLiquidityAgent } from './hooks/useLiquidityAgent'
 
 const GLITCH_STYLES = `
@@ -222,9 +222,7 @@ function App() {
                   </div>
                   <div className="mt-3 pt-2 border-t border-white/5">
                     <span className="mono-font text-[8px] text-white/20">TX: </span>
-                    <span className="mono-font text-[8px] text-emerald-400/50">
-                      <PrivateText value={bestPath.hash} type="hash"/>
-                    </span>
+                    <span className="mono-font text-[8px] text-emerald-400/50">{bestPath.hash}</span>
                   </div>
                 </div>
               </motion.div>

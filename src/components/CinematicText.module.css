@@ -1,0 +1,626 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   CinematicText.module.css
+   Cinematic, glitching text system for Nexus AI.
+   All selectors are locally scoped via CSS Modules.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Fonts ────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800;900&family=Share+Tech+Mono&family=Bebas+Neue&display=swap');
+
+/* ── CSS Custom Properties ────────────────────────────────────────────────── */
+
+.root {
+  --color-emerald:      #34d399;
+  --color-emerald-dim:  rgba(52, 211, 153, 0.55);
+  --color-purple:       #a855f7;
+  --color-purple-dim:   rgba(168, 85, 247, 0.6);
+  --color-lemon:        #e8ff00;
+  --color-red-glitch:   #ff003c;
+  --color-cyan-glitch:  #00ffff;
+  --font-display:       'Orbitron', monospace;
+  --font-hero:          'Bebas Neue', 'Orbitron', monospace;
+  --font-mono:          'Share Tech Mono', monospace;
+  --scanline-gap:       4px;
+  --scanline-opacity:   0.06;
+  --glitch-duration:    3.6s;
+  --rgb-shift:          3px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   KEYFRAMES
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Master glitch — skews the whole title on a slow irregular clock */
+@keyframes glitchSkew {
+  0%,  48%  { transform: skewX(0deg) }
+  49%        { transform: skewX(-3.5deg) scaleY(0.98) }
+  50%        { transform: skewX(2deg) scaleY(1.02) }
+  51%        { transform: skewX(-1.5deg) }
+  52%,  100% { transform: skewX(0deg) }
+}
+
+/* Before-pseudo slice — red channel displaced left */
+@keyframes glitchBefore {
+  0%,  44%  { clip-path: inset(100% 0 0 0);   transform: translate(0, 0) }
+  45%        { clip-path: inset(0 0 88% 0);    transform: translate(-4px, 0) }
+  47%        { clip-path: inset(22% 0 44% 0);  transform: translate(4px, 0) }
+  49%        { clip-path: inset(58% 0 18% 0);  transform: translate(-3px, 1px) }
+  51%        { clip-path: inset(78% 0 5% 0);   transform: translate(3px, -1px) }
+  53%,  100% { clip-path: inset(100% 0 0 0);   transform: translate(0, 0) }
+}
+
+/* After-pseudo slice — cyan channel displaced right */
+@keyframes glitchAfter {
+  0%,  44%  { clip-path: inset(100% 0 0 0);   transform: translate(0, 0) }
+  45%        { clip-path: inset(85% 0 3% 0);   transform: translate(5px, 0) }
+  47%        { clip-path: inset(35% 0 38% 0);  transform: translate(-4px, 0) }
+  49%        { clip-path: inset(8% 0 68% 0);   transform: translate(3px, -1px) }
+  51%        { clip-path: inset(62% 0 22% 0);  transform: translate(-3px, 1px) }
+  53%,  100% { clip-path: inset(100% 0 0 0);   transform: translate(0, 0) }
+}
+
+/* Scanline march — a single semi-transparent bar crawls top→bottom */
+@keyframes scanlineMarch {
+  0%   { top: -8% }
+  100% { top: 108% }
+}
+
+/* Soft flicker on the whole element — mimics phosphor instability */
+@keyframes phosphorFlicker {
+  0%,  19%  { opacity: 1 }
+  20%        { opacity: 0.92 }
+  21%        { opacity: 1 }
+  49%        { opacity: 1 }
+  50%        { opacity: 0.88 }
+  51%        { opacity: 1 }
+  79%        { opacity: 1 }
+  80%        { opacity: 0.95 }
+  81%,  100% { opacity: 1 }
+}
+
+/* Hover RGB split — three text-shadow layers drift apart then snap back */
+@keyframes rgbSplitIn {
+  0%   {
+    text-shadow:
+      0 0 0 transparent,
+      0 0 0 transparent,
+      0 0 40px var(--color-emerald-dim)
+  }
+  40%  {
+    text-shadow:
+      calc(var(--rgb-shift) * -1) 0 0 var(--color-red-glitch),
+      var(--rgb-shift)            0 0 var(--color-cyan-glitch),
+      0 0 60px var(--color-emerald-dim)
+  }
+  70%  {
+    text-shadow:
+      calc(var(--rgb-shift) * -2)   1px 0 var(--color-red-glitch),
+      calc(var(--rgb-shift) * 1.5) -1px 0 var(--color-cyan-glitch),
+      0 0 80px var(--color-purple-dim)
+  }
+  100% {
+    text-shadow:
+      calc(var(--rgb-shift) * -1) 0 0 var(--color-red-glitch),
+      var(--rgb-shift)            0 0 var(--color-cyan-glitch),
+      0 0 60px var(--color-emerald-dim)
+  }
+}
+
+/* Number pulse — big stat values breathe */
+@keyframes statBreath {
+  0%,  100% {
+    transform: scale(1)
+    text-shadow: 0 0 30px var(--color-emerald), 0 0 60px rgba(52,211,153,0.3)
+  }
+  50% {
+    transform: scale(1.018)
+    text-shadow: 0 0 50px var(--color-emerald), 0 0 100px rgba(52,211,153,0.55)
+  }
+}
+
+/* Stat value count-up shimmer sweep */
+@keyframes shimmerSweep {
+  0%   { background-position: 200% center }
+  100% { background-position: -200% center }
+}
+
+/* Subtext character reveal */
+@keyframes subReveal {
+  from { opacity: 0; letter-spacing: 0.6em; filter: blur(6px) }
+  to   { opacity: 1; letter-spacing: 0.25em; filter: blur(0) }
+}
+
+/* Status dot pulse */
+@keyframes dotPulse {
+  0%,  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6) }
+  50%        { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0) }
+}
+
+/* Ticker marquee */
+@keyframes tickerScroll {
+  0%   { transform: translateX(0) }
+  100% { transform: translateX(-50%) }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   ROOT WRAPPER
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  user-select: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   HERO TITLE  —  the main "NEXUS AI" glitching heading
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.titleWrapper {
+  position: relative;
+  display: inline-block;
+  /* phosphor flicker fires on a slow irregular beat */
+  animation: phosphorFlicker 7s ease-in-out infinite;
+}
+
+.title {
+  font-family: var(--font-hero);
+  font-size: clamp(5rem, 14vw, 11rem);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  /* Transparent fill — colour comes purely from the gradient & glow */
+  color: transparent;
+  background-image: linear-gradient(
+    160deg,
+    #ffffff 0%,
+    var(--color-emerald) 38%,
+    #a7f3d0 55%,
+    var(--color-lemon)   78%,
+    var(--color-emerald) 100%
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  /* Base ambient glow */
+  text-shadow: 0 0 40px var(--color-emerald-dim), 0 0 80px rgba(52, 211, 153, 0.2);
+
+  /* Irregular glitch-skew fires every ~3.6 s */
+  animation: glitchSkew var(--glitch-duration) cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+
+  position: relative;
+  display: block;
+}
+
+/* Red-channel slice — sits behind the main text */
+.title::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+
+  color: var(--color-red-glitch);
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  text-shadow: none;
+
+  animation: glitchBefore var(--glitch-duration) steps(1) infinite;
+  pointer-events: none;
+}
+
+/* Cyan-channel slice */
+.title::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+
+  color: var(--color-cyan-glitch);
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  text-shadow: none;
+
+  animation: glitchAfter var(--glitch-duration) steps(1) infinite;
+  pointer-events: none;
+}
+
+/* ── Scanline overlay ──────────────────────────────────────────────────────── */
+
+/* A pseudo-element layer that sits over the title and runs a translucent
+   bar down continuously — creates the CRT scanline feel without affecting
+   the text itself */
+.scanlineLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+
+  /* Static horizontal line grid — always-on subtle raster */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent calc(var(--scanline-gap) - 1px),
+    rgba(0, 0, 0, var(--scanline-opacity)) calc(var(--scanline-gap) - 1px),
+    rgba(0, 0, 0, var(--scanline-opacity)) var(--scanline-gap)
+  );
+  /* Mix-mode so it darkens the lines without washing out the glow */
+  mix-blend-mode: multiply;
+  z-index: 2;
+}
+
+/* The moving bright bar — a separate child element */
+.scanlineBeam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 14%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(52, 211, 153, 0.04) 30%,
+    rgba(52, 211, 153, 0.09) 50%,
+    rgba(52, 211, 153, 0.04) 70%,
+    transparent 100%
+  );
+  animation: scanlineMarch 3.2s linear infinite;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* ── Hover: RGB split (chromatic aberration) ──────────────────────────────── */
+
+.titleWrapper:hover .title {
+  animation:
+    glitchSkew    var(--glitch-duration) cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite,
+    rgbSplitIn    0.8s ease-in-out infinite
+}
+
+/* Speed up the glitch slices on hover so the aberration feels reactive */
+.titleWrapper:hover .title::before {
+  animation: glitchBefore calc(var(--glitch-duration) * 0.4) steps(1) infinite
+}
+.titleWrapper:hover .title::after {
+  animation: glitchAfter calc(var(--glitch-duration) * 0.4) steps(1) infinite
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SUBTITLE / TAGLINE
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.subtitle {
+  font-family: var(--font-mono);
+  font-size: clamp(0.6rem, 1.2vw, 0.75rem);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(52, 211, 153, 0.65);
+  margin-top: 0.5rem;
+  text-align: center;
+
+  animation: subReveal 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.4s;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   STATS ROW  —  the massive primary numbers
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.statsRow {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin-top: 2.5rem;
+  width: 100%;
+  max-width: 720px;
+}
+
+/* Divider lines between stat cells */
+.statsRow > * + * {
+  border-left: 1px solid rgba(52, 211, 153, 0.12);
+}
+
+.statCell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 1.5rem 0.75rem;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  gap: 0.2rem;
+}
+
+/* Top accent line that pulses on hover */
+.statCell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--color-emerald),
+    transparent
+  );
+  opacity: 0.3;
+  transition: opacity 0.3s ease, left 0.3s ease, right 0.3s ease;
+}
+
+.statCell:hover::before {
+  opacity: 0.9;
+  left: 0;
+  right: 0;
+}
+
+/* ── Primary number — THE massive value ──────────────────────────────────── */
+
+.statValue {
+  font-family: var(--font-hero);
+  font-size: clamp(3rem, 8vw, 6.5rem);
+  font-weight: 900;
+  line-height: 0.88;
+  letter-spacing: -0.01em;
+  text-align: center;
+
+  /* Gradient fill + shimmer sweep */
+  background-image: linear-gradient(
+    90deg,
+    var(--color-emerald)     0%,
+    #ffffff                  20%,
+    var(--color-emerald)     40%,
+    var(--color-lemon)       60%,
+    var(--color-emerald)     80%,
+    #ffffff                  90%,
+    var(--color-emerald)     100%
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+
+  animation:
+    statBreath    3.2s ease-in-out infinite,
+    shimmerSweep  5s   linear      infinite
+}
+
+/* Accent variant — purple for savings/AI metrics */
+.statValueAccent {
+  composes: statValue;
+  background-image: linear-gradient(
+    90deg,
+    var(--color-purple)     0%,
+    #ffffff                 20%,
+    var(--color-purple)     40%,
+    var(--color-lemon)      60%,
+    var(--color-purple)     80%,
+    #ffffff                 90%,
+    var(--color-purple)     100%
+  );
+  background-size: 300% auto;
+  text-shadow: 0 0 40px var(--color-purple-dim), 0 0 80px rgba(168, 85, 247, 0.2);
+}
+
+/* ── Unit suffix — sits tight to the number ──────────────────────────────── */
+
+.statUnit {
+  font-family: var(--font-display);
+  font-size: clamp(0.65rem, 1.4vw, 0.85rem);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-emerald);
+  opacity: 0.7;
+  align-self: flex-end;
+  padding-bottom: 0.5rem;
+  margin-left: 0.25rem;
+}
+
+/* ── Stat label — monospace metadata beneath the number ─────────────────── */
+
+.statLabel {
+  font-family: var(--font-mono);
+  font-size: clamp(0.6rem, 1vw, 0.7rem);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+  text-align: center;
+  margin-top: 0.3rem;
+}
+
+/* ── Live indicator dot beside the label ────────────────────────────────── */
+
+.statLive {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  color: rgba(52, 211, 153, 0.5);
+  margin-top: 0.15rem;
+}
+
+.statLive::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-emerald);
+  animation: dotPulse 1.8s ease-out infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SECONDARY DATA BAND  —  monospace metadata rows
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.dataBand {
+  width: 100%;
+  max-width: 720px;
+  margin-top: 1.6rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.5rem 1.5rem;
+}
+
+.dataRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dataKey {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.25);
+  white-space: nowrap;
+}
+
+.dataVal {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: rgba(52, 211, 153, 0.8);
+  font-weight: 500;
+  text-align: right;
+}
+
+/* Highlight a specific data value (e.g. status = CONFIRMED) */
+.dataValHighlight {
+  composes: dataVal;
+  color: var(--color-lemon);
+}
+
+.dataValDanger {
+  composes: dataVal;
+  color: #f87171;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   TICKER / MARQUEE STRIP
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.ticker {
+  width: 100%;
+  overflow: hidden;
+  margin-top: 2rem;
+  border-top: 1px solid rgba(52, 211, 153, 0.1);
+  border-bottom: 1px solid rgba(52, 211, 153, 0.1);
+  padding: 0.5rem 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+.tickerTrack {
+  display: flex;
+  gap: 4rem;
+  white-space: nowrap;
+  animation: tickerScroll 24s linear infinite;
+}
+
+.tickerItem {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(52, 211, 153, 0.4);
+  flex-shrink: 0;
+}
+
+.tickerItem::before {
+  content: '◈ ';
+  opacity: 0.6;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   CORNER BRACKET ACCENT
+   Applied to any wrapping div via .bracketWrap
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.bracketWrap {
+  position: relative;
+}
+
+.bracketWrap::before,
+.bracketWrap::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: rgba(52, 211, 153, 0.4);
+  border-style: solid;
+  transition: border-color 0.3s ease;
+}
+
+.bracketWrap::before {
+  top: -2px;
+  left: -2px;
+  border-width: 1.5px 0 0 1.5px;
+}
+
+.bracketWrap::after {
+  bottom: -2px;
+  right: -2px;
+  border-width: 0 1.5px 1.5px 0;
+}
+
+.bracketWrap:hover::before,
+.bracketWrap:hover::after {
+  border-color: rgba(52, 211, 153, 0.85);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SYSTEM STATUS LINE
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.systemLine {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1.2rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+}
+
+.systemLineItem {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.systemLineItem span {
+  color: rgba(52, 211, 153, 0.7);
+}

@@ -518,6 +518,33 @@ const SystemBar = () => {
   )
 }
 
+// ─── Float Drift Animation ────────────────────────────────────────────────────
+
+const floatLeft = {
+  animate: {
+    y: [0, -14, 0, 10, 0],
+    transition: {
+      duration: 9,
+      ease: 'easeInOut' as const,
+      repeat: Infinity,
+      repeatType: 'loop' as const,
+    },
+  },
+}
+
+const floatRight = {
+  animate: {
+    y: [0, 12, 0, -10, 0],
+    transition: {
+      duration: 11,
+      ease: 'easeInOut' as const,
+      repeat: Infinity,
+      repeatType: 'loop' as const,
+      delay: 1.5,
+    },
+  },
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export const TransactionHUD = ({ bestPath, transactions }: TransactionHUDProps) => (
@@ -525,21 +552,40 @@ export const TransactionHUD = ({ bestPath, transactions }: TransactionHUDProps) 
     <style>{HUD_STYLES}</style>
     <div className="hud-root fixed inset-0 pointer-events-none" style={{ zIndex: 10 }} aria-label="Transaction monitoring HUD">
       <FloatingIcons/>
-      <div className="pointer-events-auto h-full flex flex-col gap-2 p-3 max-w-[1400px] mx-auto">
+      <div className="pointer-events-auto h-full flex flex-col gap-2 p-3">
+
+        {/* Top bar — full width */}
         <SystemBar/>
         <TickerBanner/>
-        <div className="flex-1 grid grid-cols-4 gap-2 min-h-0">
-          <div className="col-span-1 flex flex-col gap-2">
+
+        {/* Main area: left panels | empty center | right panels */}
+        <div className="flex-1 flex items-stretch gap-0 min-h-0">
+
+          {/* ── Left column ── */}
+          <motion.div
+            className="flex flex-col gap-2 w-[300px] shrink-0"
+            variants={floatLeft}
+            animate="animate"
+          >
             <LiquidityFlowCard bestPath={bestPath}/>
-          </div>
-          <div className="col-span-2 flex flex-col gap-2">
             <TransactionFeedCard transactions={transactions}/>
-          </div>
-          <div className="col-span-1 flex flex-col gap-2">
+          </motion.div>
+
+          {/* ── Empty center — 3D core shows through ── */}
+          <div className="flex-1 pointer-events-none" />
+
+          {/* ── Right column ── */}
+          <motion.div
+            className="flex flex-col gap-2 w-[280px] shrink-0"
+            variants={floatRight}
+            animate="animate"
+          >
             <NetworkPulseCard/>
             <SecurityOracleCard/>
-          </div>
+          </motion.div>
         </div>
+
+        {/* Bottom status bar */}
         <motion.div
           className="flex items-center gap-4 px-4 py-2 glass-card border border-white/5"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
@@ -565,6 +611,7 @@ export const TransactionHUD = ({ bestPath, transactions }: TransactionHUDProps) 
           )}
           <div className="ml-auto hud-font-mono text-[8px] text-white/20">NEXUS HUD v2.4.1 · © 2025</div>
         </motion.div>
+
       </div>
     </div>
   </>

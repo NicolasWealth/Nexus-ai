@@ -5,6 +5,7 @@ import CyberpunkMatrixBackground from './components/CyberpunkMatrixBackground'
 import TransactionHUD from './components/TransactionHUD'
 import { PrivacyShieldProvider, PrivacyShield } from './components/PrivacyShield'
 import { useLiquidityAgent } from './hooks/useLiquidityAgent'
+import NexusCore3D from './components/NexusCore3D'
 
 const GLITCH_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap');
@@ -97,6 +98,12 @@ function App() {
       <style>{GLITCH_STYLES}</style>
 
       <CyberpunkMatrixBackground/>
+
+      {/* 3D Core — fixed dead-center, behind HUD panels */}
+      <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 9, pointerEvents: 'none' }}>
+        <NexusCore3D width={560} height={560} />
+      </div>
+
       <TransactionHUD bestPath={bestPath} transactions={transactions}/>
 
       <div className="relative z-20 flex flex-col items-center min-h-screen">
@@ -114,21 +121,8 @@ function App() {
             </span>
           </motion.div>
 
-          {/* Logo orb */}
-          <motion.div
-            className="relative mb-10"
-            initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-400/20 to-purple-600/20 blur-2xl scale-150"/>
-            <div className="relative w-28 h-28 rounded-full border border-emerald-400/20 bg-black/60 backdrop-blur-sm flex items-center justify-center overflow-hidden">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                <circle cx="24" cy="24" r="20" stroke="#34d399" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.4"/>
-                <path d="M12 30 L18 18 L26 27 L32 18" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="24" cy="24" r="3" fill="#c084fc"/>
-              </svg>
-            </div>
-          </motion.div>
+          {/* Spacer — vertical gap so content clears the 3D globe */}
+          <div className="h-[300px]" />
 
           {/* Title */}
           <AnimatePresence mode="wait">

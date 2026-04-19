@@ -143,9 +143,9 @@ export const InteractiveCard = ({ children, width = 320, height = 420, maxTilt =
           <div className="ic-corner ic-corner-bl"/><div className="ic-corner ic-corner-br"/>
           <div className="ic-grid"/><div className="ic-noise"/><div className="ic-scanline"/>
           <GlareLayer
-            glareX={glareX as MotionValue<string>}
-            glareY={glareY as MotionValue<string>}
-            glareOpacity={glareOpacity as MotionValue<number>}
+            glareX={glareX as any}
+            glareY={glareY as any}
+            glareOpacity={glareOpacity as any}
           />
           {children ?? <DefaultContent/>}
         </motion.div>

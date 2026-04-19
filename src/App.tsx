@@ -99,9 +99,9 @@ function App() {
 
       <CyberpunkMatrixBackground/>
 
-      {/* 3D Core — fixed dead-center, behind HUD panels */}
-      <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 9, pointerEvents: 'none' }}>
-        <NexusCore3D width={560} height={560} />
+      {/* 3D Core — absolute center, 40vw width/height, behind HUD panels */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: '40vw', height: '40vw', zIndex: 9, pointerEvents: 'none' }}>
+        <NexusCore3D width="100%" height="100%" />
       </div>
 
       <TransactionHUD bestPath={bestPath} transactions={transactions}/>

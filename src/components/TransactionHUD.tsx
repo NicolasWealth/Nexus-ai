@@ -558,12 +558,12 @@ export const TransactionHUD = ({ bestPath, transactions }: TransactionHUDProps) 
         <SystemBar/>
         <TickerBanner/>
 
-        {/* Main area: left panels | empty center | right panels */}
-        <div className="flex-1 flex items-stretch gap-0 min-h-0">
+        {/* Main area: left panels | right panels absolutely positioned */}
+        <div className="flex-1 relative min-h-0 pointer-events-none">
 
           {/* ── Left column ── */}
           <motion.div
-            className="flex flex-col gap-2 w-[300px] shrink-0"
+            className="absolute left-0 top-0 flex flex-col gap-2 w-[300px] pointer-events-auto"
             variants={floatLeft}
             animate="animate"
           >
@@ -571,12 +571,9 @@ export const TransactionHUD = ({ bestPath, transactions }: TransactionHUDProps) 
             <TransactionFeedCard transactions={transactions}/>
           </motion.div>
 
-          {/* ── Empty center — 3D core shows through ── */}
-          <div className="flex-1 pointer-events-none" />
-
           {/* ── Right column ── */}
           <motion.div
-            className="flex flex-col gap-2 w-[280px] shrink-0"
+            className="absolute right-0 top-0 flex flex-col gap-2 w-[280px] pointer-events-auto"
             variants={floatRight}
             animate="animate"
           >

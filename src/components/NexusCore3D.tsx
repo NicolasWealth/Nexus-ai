@@ -19,7 +19,8 @@ function WireframeSphere() {
   const material = useMemo(
     () =>
       new THREE.LineBasicMaterial({
-        color: new THREE.Color('#34d399'),
+        color: new THREE.Color('#34d399').multiplyScalar(2),
+        toneMapped: false,
         transparent: true,
         opacity: 0.85,
         linewidth: 1,
@@ -94,11 +95,12 @@ function RingGrid() {
       {rings.map(({ points, key }) => {
         const geo = new THREE.BufferGeometry().setFromPoints(points)
         const mat = new THREE.LineBasicMaterial({
-          color: new THREE.Color('#6ee7b7'),
+          color: new THREE.Color('#6ee7b7').multiplyScalar(1.5),
+          toneMapped: false,
           transparent: true,
           opacity: 0.28,
         })
-        return <line key={key} geometry={geo} material={mat} />
+        return <primitive object={new THREE.Line(geo, mat)} key={key} />
       })}
     </group>
   )
@@ -110,7 +112,7 @@ function RingGrid() {
 
 function PulsingCore() {
   const meshRef = useRef<THREE.Mesh>(null)
-  const materialRef = useRef<ReturnType<typeof MeshDistortMaterial> | null>(null)
+  const materialRef = useRef<any>(null)
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()

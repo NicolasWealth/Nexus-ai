@@ -102,6 +102,17 @@ const HUD_STYLES = `
   }
   .pulse-ring { animation: pulse-ring 2s ease-out infinite; }
 
+  @keyframes skeleton-shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  .skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 100%);
+    background-size: 200% auto;
+    animation: skeleton-shimmer 1.5s linear infinite;
+    border-radius: 4px;
+  }
+
   .glass-card {
     background: rgba(0,0,0,0.55);
     backdrop-filter: blur(18px) saturate(180%);
@@ -115,6 +126,12 @@ const HUD_STYLES = `
     background: repeating-linear-gradient(to bottom, transparent, transparent 3px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px);
     pointer-events: none; border-radius: inherit; z-index: 0;
   }
+
+  @keyframes empty-state-float {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-4px); }
+  }
+  .empty-float { animation: empty-state-float 3s ease-in-out infinite; }
 `
 
 // ─── SVG Wireframes ────────────────────────────────────────────────────────────
@@ -158,6 +175,47 @@ const WireframeFlow = ({ color }: { color: string }) => (
       <path key={i} d={`M0 ${20+i*20} C75 ${20+i*20+(i%2===0?-15:15)}, 225 ${20+i*20+(i%2===0?15:-15)}, 300 ${20+i*20}`} fill="none" stroke={color} strokeWidth={0.5+i*0.1} opacity={0.3+i*0.08}/>
     ))}
   </svg>
+)
+
+// ─── Skeleton Row ─────────────────────────────────────────────────────────────
+
+const SkeletonRow = () => (
+  <div className="flex items-center gap-2 py-1.5 px-2 rounded-md border border-white/5">
+    <div className="w-5 h-5 rounded skeleton shrink-0" />
+    <div className="flex-1 space-y-1.5">
+      <div className="h-2 skeleton w-3/4" />
+      <div className="h-1.5 skeleton w-1/2" />
+    </div>
+    <div className="w-8 h-4 skeleton" />
+    <div className="w-1.5 h-1.5 rounded-full skeleton shrink-0" />
+  </div>
+)
+
+// ─── Empty State ──────────────────────────────────────────────────────────────
+
+const EmptyTransactions = () => (
+  <div className="flex flex-col items-center justify-center py-8 gap-3">
+    <div className="empty-float">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <circle cx="18" cy="18" r="16" stroke="rgba(192,132,252,0.3)" strokeWidth="1" strokeDasharray="4 3"/>
+        <circle cx="18" cy="18" r="8" stroke="rgba(192,132,252,0.2)" strokeWidth="1"/>
+        <path d="M12 18h12M18 12v12" stroke="rgba(192,132,252,0.4)" strokeWidth="1.2" strokeLinecap="round"/>
+      </svg>
+    </div>
+    <span className="hud-font-mono text-[9px] text-purple-400/40 tracking-widest text-center">
+      AWAITING AGENT<br/>TRANSACTIONS…
+    </span>
+    <div className="flex gap-1">
+      {[0,1,2].map(i => (
+        <motion.div
+          key={i}
+          className="w-1 h-1 rounded-full bg-purple-400/30"
+          animate={{ opacity: [0.2, 1, 0.2] }}
+          transition={{ duration: 1.2, delay: i * 0.4, repeat: Infinity }}
+        />
+      ))}
+    </div>
+  </div>
 )
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
@@ -250,57 +308,80 @@ const glitchVariants = {
   exit:    { opacity: 0, x: 6,  filter: 'blur(3px)', transition: { duration: 0.15 } },
 }
 
-const TransactionFeedCard = ({ transactions }: { transactions: BestPath[] }) => (
-  <motion.div
-    className="glass-card animate-glow-purple relative overflow-hidden scanlines"
-    style={{ color: '#c084fc' }}
-    initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.8, delay: 0.15, ease: 'easeOut' }}
-  >
-    <WireframeCircuit color="#c084fc"/>
-    <div className="relative z-10 p-4">
-      <CardLabel color="text-purple-400"><Activity size={10}/> Live Transactions</CardLabel>
-      <div className="space-y-1 min-h-[210px]">
-        <AnimatePresence initial={false}>
-          {transactions.map(tx => (
-            <motion.div key={tx.id} variants={glitchVariants} initial="hidden" animate="visible" exit="exit"
-              className="flex items-center gap-2 py-1.5 px-2 rounded-md bg-purple-400/5 border border-purple-400/10 hover:bg-purple-400/10 transition-colors"
-            >
-              <div className="w-5 h-5 rounded bg-purple-400/15 flex items-center justify-center text-purple-300 shrink-0">
-                {typeIcon[tx.type]}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="hud-font-mono text-[9px] text-purple-300 truncate">
-                    <PrivateText value={tx.hash} type="hash"/>
-                  </span>
-                  <span className={`text-[8px] hud-font-mono px-1 rounded ${statusColor[tx.status]}`}>
-                    {tx.status.toUpperCase()}
-                  </span>
-                </div>
-                <div className="hud-font-mono text-[8px] text-purple-400/50 truncate">
-                  <PrivateText value={tx.from} type="address"/> → <PrivateText value={tx.to} type="address"/>
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <div className="hud-font-display text-[10px] text-purple-200">
-                  <PrivateText value={tx.totalFee.toFixed(2)} type="amount"/>
-                </div>
-                <div className="hud-font-mono text-[8px] text-purple-400/60">ETH</div>
-              </div>
-              <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusDot[tx.status]}`}/>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+const TransactionFeedCard = ({ transactions }: { transactions: BestPath[] }) => {
+  const [isFirstLoad, setIsFirstLoad] = useState(true)
+
+  useEffect(() => {
+    if (transactions.length > 0) setIsFirstLoad(false)
+  }, [transactions])
+
+  return (
+    <motion.div
+      className="glass-card animate-glow-purple relative overflow-hidden scanlines"
+      style={{ color: '#c084fc' }}
+      initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, delay: 0.15, ease: 'easeOut' }}
+    >
+      <WireframeCircuit color="#c084fc"/>
+      <div className="relative z-10 p-4">
+        <CardLabel color="text-purple-400"><Activity size={10}/> Live Transactions</CardLabel>
+
+        <div className="min-h-[210px]">
+          {isFirstLoad ? (
+            /* Loading skeleton */
+            <div className="space-y-1">
+              {[1,2,3,4].map(i => <SkeletonRow key={i} />)}
+            </div>
+          ) : transactions.length === 0 ? (
+            /* Empty state */
+            <EmptyTransactions />
+          ) : (
+            /* Real transactions */
+            <div className="space-y-1">
+              <AnimatePresence initial={false}>
+                {transactions.map(tx => (
+                  <motion.div key={tx.id} variants={glitchVariants} initial="hidden" animate="visible" exit="exit"
+                    className="flex items-center gap-2 py-1.5 px-2 rounded-md bg-purple-400/5 border border-purple-400/10 hover:bg-purple-400/10 transition-colors"
+                  >
+                    <div className="w-5 h-5 rounded bg-purple-400/15 flex items-center justify-center text-purple-300 shrink-0">
+                      {typeIcon[tx.type]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="hud-font-mono text-[9px] text-purple-300 truncate">
+                          <PrivateText value={tx.hash} type="hash"/>
+                        </span>
+                        <span className={`text-[8px] hud-font-mono px-1 rounded ${statusColor[tx.status]}`}>
+                          {tx.status.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="hud-font-mono text-[8px] text-purple-400/50 truncate">
+                        <PrivateText value={tx.from} type="address"/> → <PrivateText value={tx.to} type="address"/>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="hud-font-display text-[10px] text-purple-200">
+                        <PrivateText value={tx.totalFee.toFixed(2)} type="amount"/>
+                      </div>
+                      <div className="hud-font-mono text-[8px] text-purple-400/60">ETH</div>
+                    </div>
+                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusDot[tx.status]}`}/>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-2 flex items-center gap-2 pt-2 border-t border-purple-400/10">
+          <Radio size={9} className="text-purple-400 animate-pulse"/>
+          <span className="hud-font-mono text-[9px] text-purple-400/60">MEMPOOL FEED<span className="blink">_</span></span>
+          <span className="hud-font-mono text-[9px] text-purple-300 ml-auto">{transactions.length} RECENT</span>
+        </div>
       </div>
-      <div className="mt-2 flex items-center gap-2 pt-2 border-t border-purple-400/10">
-        <Radio size={9} className="text-purple-400 animate-pulse"/>
-        <span className="hud-font-mono text-[9px] text-purple-400/60">MEMPOOL FEED<span className="blink">_</span></span>
-        <span className="hud-font-mono text-[9px] text-purple-300 ml-auto">{transactions.length} RECENT</span>
-      </div>
-    </div>
-  </motion.div>
-)
+    </motion.div>
+  )
+}
 
 // ─── Card: Network Pulse ──────────────────────────────────────────────────────
 
